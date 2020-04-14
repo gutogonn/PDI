@@ -6,9 +6,12 @@ public class ImageController : MonoBehaviour
 {
     public Color data;
     public SpriteRenderer image;
-    public Sprite newSprite;
+    private Sprite newSprite;
     public Text rText, gText, bText;
     public Button grayscaleButton;
+
+    public Button linearButton;
+    public Slider linear;
 
     Color[] color;
 
@@ -16,7 +19,7 @@ public class ImageController : MonoBehaviour
     {
         color = image.sprite.texture.GetPixels();
         grayscaleButton.onClick.AddListener(turnGray);
-        //GetComponent<SpriteRenderer>().sprite = newSprite;
+        linearButton.onClick.AddListener(turnLinear);
     }
 
     public void Update()
@@ -31,6 +34,28 @@ public class ImageController : MonoBehaviour
     {
         newSprite = image.sprite;
         Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Color pixel = newSprite.texture.GetPixel(x, y);
+                Color color = new Color((pixel.r + pixel.g + pixel.b) / 3, (pixel.r + pixel.g + pixel.b) / 3, (pixel.r + pixel.g + pixel.b) / 3, 1);
+                newImage.SetPixel(x, y, color);
+            }
+        }
+        newImage.Apply();
+
+        byte[] itemBGBytes = newImage.EncodeToPNG();
+        GetComponent<SpriteRenderer>().sprite = Sprite.Create(newImage, new Rect(0.0f, 0.0f, newImage.width, newImage.height), new Vector2(0.5f, 0.5f), 100.0f);
+        File.WriteAllBytes("Assets/Images/" + newSprite.name + " - GrayScale.png", itemBGBytes);
+    }
+
+    public void turnLinear()
+    {
+        newSprite = image.sprite;
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
 
         Texture2D itemBGTex = newSprite.texture;
 
@@ -38,15 +63,23 @@ public class ImageController : MonoBehaviour
         {
             for (int x = 0; x < newImage.width; x++)
             {
-                Color pixel = newSprite.texture.GetPixel(x,y);
-                Color color = new Color((pixel.r + pixel.g + pixel.b)/3, (pixel.r + pixel.g + pixel.b) / 3, (pixel.r + pixel.g + pixel.b) / 3, 1);
+                Color pixel = newSprite.texture.GetPixel(x, y);
+                Color color;
+
+                if(pixel.r >= linear.value)
+                {
+                    color = new Color(1, 1, 1, pixel.a);
+                }
+                else
+                {
+                    color = new Color(0, 0, 0, pixel.a);
+                }
                 newImage.SetPixel(x, y, color);
             }
         }
-        newImage.name = image.name + " - GrayScale";
         newImage.Apply();
         byte[] itemBGBytes = newImage.EncodeToPNG();
         GetComponent<SpriteRenderer>().sprite = Sprite.Create(newImage, new Rect(0.0f, 0.0f, newImage.width, newImage.height), new Vector2(0.5f, 0.5f), 100.0f);
-        File.WriteAllBytes("Assets/Images/" + newSprite.name + " - GrayScale.png", itemBGBytes);
+        File.WriteAllBytes("Assets/Images/" + newSprite.name + " - linear.png", itemBGBytes);
     }
 }
