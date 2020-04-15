@@ -8,6 +8,7 @@ public class ImageController : MonoBehaviour
     public Color data;
     public SpriteRenderer image;
     private Sprite newSprite;
+    
     public Text rText, gText, bText;
     public Button grayscaleButton;
 
@@ -17,15 +18,24 @@ public class ImageController : MonoBehaviour
     public Button noiseButton;
     public Dropdown noiseOption;
 
+    public Button adicionarButton;
+    public Button subtrairButton;
+    public SpriteRenderer image2;
+    private Sprite newSprite2;
+    public Slider image1Pr;
+    public Slider image2Pr;
 
     Color[] color;
 
     public void Start()
     {
         color = image.sprite.texture.GetPixels();
+
         grayscaleButton.onClick.AddListener(turnGray);
         linearButton.onClick.AddListener(turnLinear);
         noiseButton.onClick.AddListener(removeNoise);
+        adicionarButton.onClick.AddListener(adicaoImagem);
+        subtrairButton.onClick.AddListener(subtracaoImagem);
     }
 
     public void Update()
@@ -161,6 +171,66 @@ public class ImageController : MonoBehaviour
         }
         Array.Sort(v);
         return v[v.Length / 2];
+    }
+
+    public void adicaoImagem()
+    {
+        newSprite = image.sprite;
+        newSprite2 = image2.sprite;
+
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Color pixel1 = newSprite.texture.GetPixel(x, y);
+                Color pixel2 = newSprite2.texture.GetPixel(x, y);
+
+                float r = (pixel1.r * image1Pr.value) + (pixel2.r * image2Pr.value);
+                float g = (pixel1.g * image1Pr.value) + (pixel2.g * image2Pr.value);
+                float b = (pixel1.b * image1Pr.value) + (pixel2.r * image2Pr.value);
+
+                r = r > 1 ? 1 : r;
+                g = g > 1 ? 1 : g;
+                b = b > 1 ? 1 : b;
+
+                Color newColor = new Color(r, g, b, 1);
+                newImage.SetPixel(x, y, newColor);
+            }
+        }
+        saveImage(newImage, newSprite.name + " - adicionado");
+    }
+
+    public void subtracaoImagem()
+    {
+        newSprite = image.sprite;
+        newSprite2 = image2.sprite;
+
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Color pixel1 = newSprite.texture.GetPixel(x, y);
+                Color pixel2 = newSprite2.texture.GetPixel(x, y);
+
+                float r = (pixel1.r * image1Pr.value) - (pixel2.r * image2Pr.value);
+                float g = (pixel1.g * image1Pr.value) - (pixel2.g * image2Pr.value);
+                float b = (pixel1.b * image1Pr.value) - (pixel2.r * image2Pr.value);
+
+                r = r < 0 ? 0 : r;
+                g = g < 0 ? 0 : g;
+                b = b < 0 ? 0 : b;
+
+                Color newColor = new Color(r, g, b, 1);
+                newImage.SetPixel(x, y, newColor);
+            }
+        }
+        saveImage(newImage, newSprite.name + " - subtraido");
     }
 
     private void saveImage(Texture2D newImage, string name)
