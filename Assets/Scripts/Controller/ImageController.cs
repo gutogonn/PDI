@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class ImageController : MonoBehaviour
 {
+    public GraficoController graficoController;
     public Color data;
     public SpriteRenderer image;
     private Sprite newSprite;
@@ -25,6 +26,9 @@ public class ImageController : MonoBehaviour
     public Slider image1Pr;
     public Slider image2Pr;
 
+
+    public Button histogramaButton;
+
     Color[] color;
 
     public void Start()
@@ -36,6 +40,7 @@ public class ImageController : MonoBehaviour
         noiseButton.onClick.AddListener(removeNoise);
         adicionarButton.onClick.AddListener(adicaoImagem);
         subtrairButton.onClick.AddListener(subtracaoImagem);
+        histogramaButton.onClick.AddListener(gerarHistograma);
     }
 
     public void Update()
@@ -233,12 +238,35 @@ public class ImageController : MonoBehaviour
         saveImage(newImage, newSprite.name + " - subtraido");
     }
 
+    public void gerarHistograma()
+    {
+        histogramaGrafico(image, graficoController.graph1Sprite);
+        histogramaGrafico(image2, graficoController.graph2Sprite);
+        histogramaGrafico(GetComponent<SpriteRenderer>(), graficoController.graph3Sprite);
+    }
+
+    public void histogramaGrafico(SpriteRenderer image, Image grafSprite)
+    {
+        int[] qt = new int[256];
+        Texture2D newImage = new Texture2D(image.sprite.texture.width, image.sprite.texture.height);
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                qt[(int)(image.sprite.texture.GetPixel(x, y).r * 255)]++;
+                qt[(int)(image.sprite.texture.GetPixel(x, y).g * 255)]++;
+                qt[(int)(image.sprite.texture.GetPixel(x, y).b * 255)]++;
+            }
+        }
+        graficoController.create(qt, image.sprite, grafSprite);
+    }
+
     private void saveImage(Texture2D newImage, string name)
     {
         newImage.Apply();
         byte[] itemBGBytes = newImage.EncodeToPNG();
         GetComponent<SpriteRenderer>().sprite = Sprite.Create(newImage, new Rect(0.0f, 0.0f, newImage.width, newImage.height), new Vector2(0.5f, 0.5f), 100.0f);
-        File.WriteAllBytes("Assets/Images/" + name + ".png", itemBGBytes);
+        File.WriteAllBytes("Assets/Resources/Images/" + name + ".png", itemBGBytes);
     }
 }
 
