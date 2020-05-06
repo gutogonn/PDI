@@ -26,6 +26,12 @@ public class ImageController : MonoBehaviour
     public Slider image1Pr;
     public Slider image2Pr;
 
+    public Button inverterButton;
+    private Sprite q1, q2, q3, q4;
+    public Toggle q1inv, q2inv, q3inv, q4inv;
+
+    public Button verificaRectButton;
+
 
     public Button histogramaButton;
 
@@ -41,6 +47,8 @@ public class ImageController : MonoBehaviour
         adicionarButton.onClick.AddListener(adicaoImagem);
         subtrairButton.onClick.AddListener(subtracaoImagem);
         histogramaButton.onClick.AddListener(gerarHistograma);
+        inverterButton.onClick.AddListener(inverterImagem);
+        verificaRectButton.onClick.AddListener(scanImageRetangulo);
     }
 
     public void Update()
@@ -66,7 +74,7 @@ public class ImageController : MonoBehaviour
                 newImage.SetPixel(x, y, color);
             }
         }
-        saveImage(newImage, newSprite.name + " - GrayScale");
+        GetComponent<SpriteRenderer>().sprite = saveImage(newImage, newSprite.name + " - GrayScale", true);
     }
 
     public void turnLinear()
@@ -94,7 +102,7 @@ public class ImageController : MonoBehaviour
                 newImage.SetPixel(x, y, color);
             }
         }
-        saveImage(newImage, newSprite.name + " - linear");
+        GetComponent<SpriteRenderer>().sprite = saveImage(newImage, newSprite.name + " - linear", true);
     }
 
     public void removeNoise()
@@ -153,7 +161,7 @@ public class ImageController : MonoBehaviour
                 newImage.SetPixel(x, y, colorN);
             }
         }
-        saveImage(newImage, newSprite.name + " - noise");
+        GetComponent<SpriteRenderer>().sprite = saveImage(newImage, newSprite.name + " - noise", true);
     }
 
     private float mediana(Color[] vetor, PixelColor sec)
@@ -176,6 +184,139 @@ public class ImageController : MonoBehaviour
         }
         Array.Sort(v);
         return v[v.Length / 2];
+    }
+
+    public void inverterImagem()
+    {
+        //GetComponent<SpriteRenderer>().sprite = invertImage(image.sprite);
+        q1 = q1inv.isOn ? invertImage(scanQuadrant(image.sprite, 0, image.sprite.texture.width / 2, 0, image.sprite.texture.height / 2)) : scanQuadrant(image.sprite, 0, image.sprite.texture.width / 2, 0, image.sprite.texture.height / 2);
+        Quadrante quad1 = new Quadrante(q1, new Vector2(0, image.sprite.texture.width / 2), new Vector2(0, image.sprite.texture.height / 2));
+
+        q2 = q2inv.isOn ? invertImage(scanQuadrant(image.sprite, image.sprite.texture.width / 2, image.sprite.texture.width, image.sprite.texture.height / 2, image.sprite.texture.height)) : scanQuadrant(image.sprite, image.sprite.texture.width / 2, image.sprite.texture.width, image.sprite.texture.height / 2, image.sprite.texture.height);
+        Quadrante quad2 = new Quadrante(q2, new Vector2(image.sprite.texture.width / 2, image.sprite.texture.width), new Vector2(image.sprite.texture.height / 2, image.sprite.texture.height));
+
+        q3 = q3inv.isOn ? invertImage(scanQuadrant(image.sprite, 0, image.sprite.texture.width / 2, image.sprite.texture.height / 2, image.sprite.texture.height)) : scanQuadrant(image.sprite, 0, image.sprite.texture.width / 2, image.sprite.texture.height / 2, image.sprite.texture.height);
+        Quadrante quad3 = new Quadrante(q3, new Vector2(0, image.sprite.texture.width / 2), new Vector2(image.sprite.texture.height / 2, image.sprite.texture.height));
+
+        q4 = q4inv.isOn ? invertImage(scanQuadrant(image.sprite, image.sprite.texture.width / 2, image.sprite.texture.width, 0, image.sprite.texture.height / 2)) : scanQuadrant(image.sprite, image.sprite.texture.width / 2, image.sprite.texture.width, 0, image.sprite.texture.height / 2);
+        Quadrante quad4 = new Quadrante(q4, new Vector2(image.sprite.texture.width / 2, image.sprite.texture.width), new Vector2(0, image.sprite.texture.height / 2));
+
+        GetComponent<SpriteRenderer>().sprite = buildingSpriteWithQuadrant(quad1, quad2, quad3, quad4);
+    }
+
+    public Sprite buildingSpriteWithQuadrant(Quadrante quad1, Quadrante quad2, Quadrante quad3, Quadrante quad4)
+    {
+        newSprite = image.sprite;
+
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Sprite quad = null;
+
+                if (y >= quad1.altura.x && y < quad1.altura.y && x >= quad1.largura.x && x < quad1.largura.y)
+                {
+                    quad = quad1.spirte;
+                }
+                if (y >= quad2.altura.x && y < quad2.altura.y && x >= quad2.largura.x && x < quad2.largura.y)
+                {
+                    quad = quad2.spirte;
+                }
+                if (y >= quad3.altura.x && y < quad3.altura.y && x >= quad3.largura.x && x < quad3.largura.y)
+                {
+                    quad = quad3.spirte;
+                }
+                if (y >= quad4.altura.x && y < quad4.altura.y && x >= quad4.largura.x && x < quad4.largura.y)
+                {
+                    quad = quad4.spirte;
+                }
+
+
+                Color pixel = quad.texture.GetPixel(x, y);
+                Color color = new Color(pixel.r, pixel.g, pixel.b, 1);
+
+                newImage.SetPixel(x, y, color);
+            }
+        }
+
+        return saveImage(newImage, newSprite.name + " - inverted", true);
+    }
+
+    public Sprite invertImage(Sprite sprite)
+    {
+        newSprite = sprite;
+
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Color pixel = newSprite.texture.GetPixel(x, newImage.height - y);
+                Color color = new Color(pixel.r, pixel.g, pixel.b, 1);
+                newImage.SetPixel(x, y, color);
+            }
+        }
+
+        return saveImage(newImage, newSprite.name + " - inverted", true);
+    }
+
+    public Sprite scanQuadrant(Sprite sprite, int inix, int fimx, int iniy, int fimy)
+    {
+        newSprite = sprite;
+
+        Debug.Log(inix + " - " + fimx + " 88 " + iniy + " - " + fimy);
+
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D newImage2 = new Texture2D(112, 175);
+
+        for (int y = iniy; y < fimy; y++)
+        {
+            for (int x = inix; x < fimx; x++)
+            {
+
+                Color pixel = newSprite.texture.GetPixel(x, y);
+                Color color = new Color(pixel.r, pixel.g, pixel.b, 1);
+                newImage2.SetPixel(x, y, color);
+
+            }
+        }
+
+        return saveImage(newImage2, newSprite.name + " - quad", true);
+    }
+
+    public void scanImageRetangulo()
+    {
+
+        bool hasBlank = false;
+
+        newSprite = image.sprite;
+        Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+        Texture2D itemBGTex = newSprite.texture;
+
+        for (int y = 0; y < newImage.height; y++)
+        {
+            for (int x = 0; x < newImage.width; x++)
+            {
+                Color pixel = newSprite.texture.GetPixel(x, y);
+                Color color = new Color(pixel.r, pixel.g , pixel.b, 1);
+
+                if (verificaBranco(color))
+                {
+                    hasBlank = true;
+                }
+            }
+        }
+        Debug.Log(hasBlank);
+    }
+
+    public bool verificaBranco(Color color)
+    {
+        return color.r == 0 && color.g == 0 && color.b == 0;
     }
 
     public void adicaoImagem()
@@ -205,7 +346,7 @@ public class ImageController : MonoBehaviour
                 newImage.SetPixel(x, y, newColor);
             }
         }
-        saveImage(newImage, newSprite.name + " - adicionado");
+        GetComponent<SpriteRenderer>().sprite = saveImage(newImage, newSprite.name + " - adicionado", true);
     }
 
     public void subtracaoImagem()
@@ -235,7 +376,7 @@ public class ImageController : MonoBehaviour
                 newImage.SetPixel(x, y, newColor);
             }
         }
-        saveImage(newImage, newSprite.name + " - subtraido");
+        GetComponent<SpriteRenderer>().sprite = saveImage(newImage, newSprite.name + " - subtraido", true);
     }
 
     public void gerarHistograma()
@@ -261,12 +402,48 @@ public class ImageController : MonoBehaviour
         graficoController.create(qt, image.sprite, grafSprite);
     }
 
-    private void saveImage(Texture2D newImage, string name)
+    public void equalizacaoHistograma(SpriteRenderer img, bool acc)
+    {
+
+        //int[] hR = gerarHistograma;
+
+    }
+
+    //private int[] histograma(SpriteRenderer img, PixelColor sec)
+    //{
+    //    newSprite = image.sprite;
+    //    Texture2D newImage = new Texture2D(newSprite.texture.width, newSprite.texture.height);
+
+    //    Texture2D itemBGTex = newSprite.texture;
+    //    float[] v = new float[vetor.Length];
+    //    for (int i = 0; i < vetor.Length; i++)
+    //    {
+    //        if (sec.Equals(PixelColor.RED))
+    //        {
+    //            v[i] = vetor[i].r;
+    //        }
+    //        if (sec.Equals(PixelColor.GREEN))
+    //        {
+    //            v[i] = vetor[i].g;
+    //        }
+    //        if (sec.Equals(PixelColor.BLUE))
+    //        {
+    //            v[i] = vetor[i].b;
+    //        }
+    //    }
+    //    Array.Sort(v);
+    //    return v;
+    //}
+
+    private Sprite saveImage(Texture2D newImage, string name, bool saveFile)
     {
         newImage.Apply();
         byte[] itemBGBytes = newImage.EncodeToPNG();
-        GetComponent<SpriteRenderer>().sprite = Sprite.Create(newImage, new Rect(0.0f, 0.0f, newImage.width, newImage.height), new Vector2(0.5f, 0.5f), 100.0f);
-        File.WriteAllBytes("Assets/Resources/Images/" + name + ".png", itemBGBytes);
+        if (saveFile)
+        {
+            File.WriteAllBytes("Assets/Resources/Images/" + name + ".png", itemBGBytes);
+        }
+        return Sprite.Create(newImage, new Rect(0.0f, 0.0f, newImage.width, newImage.height), new Vector2(0.5f, 0.5f), 100.0f);
     }
 }
 
